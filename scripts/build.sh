@@ -18,9 +18,15 @@ echo "Packaging..."
 cp src/module.json dist/m8/
 cp src/ui.js dist/m8/
 
+# Create tarball for release
+cd dist
+tar -czvf m8-module.tar.gz m8/
+cd ..
+
 echo ""
 echo "=== Build Complete ==="
 echo "Output: dist/m8/"
+echo "Tarball: dist/m8-module.tar.gz"
 echo ""
 echo "To install on Move:"
 echo "  ./scripts/install.sh"
