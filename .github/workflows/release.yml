@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package module
+        run: |
+          mkdir -p dist/m8
+          cp src/module.json dist/m8/
+          cp src/ui.js dist/m8/
+          cd dist
+          tar -czvf ../m8-module.tar.gz m8/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: m8-module.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
