@@ -5,14 +5,15 @@
  * Maps Move pads/buttons to LPP protocol and handles bidirectional MIDI.
  */
 
+/* Shared utilities - absolute path for module location independence */
 import {
     MoveMenu, MoveBack, MoveCapture, MoveShift,
     MoveMainButton, MoveMainTouch,
     MovePlay, MoveRec, MoveLoop, MoveMute, MoveUndo,
     MovePad32, MidiClock
-} from '../../shared/constants.mjs';
+} from '/data/UserData/move-anything/shared/constants.mjs';
 
-import { isCapacitiveTouch } from '../../shared/input_filter.mjs';
+import { isCapacitiveTouch } from '/data/UserData/move-anything/shared/input_filter.mjs';
 
 /* LPP note layout (10x10 grid) */
 const lppNotes = [

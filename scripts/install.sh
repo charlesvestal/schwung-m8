@@ -14,16 +14,17 @@ fi
 
 echo "=== Installing M8 Module ==="
 
-# Deploy to Move
+# Deploy to Move - utilities subdirectory
 echo "Copying module to Move..."
-scp -r dist/m8 ableton@move.local:/data/UserData/move-anything/modules/
+ssh ableton@move.local "mkdir -p /data/UserData/move-anything/modules/utilities/m8"
+scp -r dist/m8/* ableton@move.local:/data/UserData/move-anything/modules/utilities/m8/
 
 # Set permissions so Module Store can update later
 echo "Setting permissions..."
-ssh ableton@move.local "chmod -R a+rw /data/UserData/move-anything/modules/m8"
+ssh ableton@move.local "chmod -R a+rw /data/UserData/move-anything/modules/utilities/m8"
 
 echo ""
 echo "=== Install Complete ==="
-echo "Module installed to: /data/UserData/move-anything/modules/m8/"
+echo "Module installed to: /data/UserData/move-anything/modules/utilities/m8/"
 echo ""
 echo "Restart Move Anything to load the new module."
