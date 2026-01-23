@@ -4,6 +4,7 @@
     "version": "1.0.1",
     "description": "Novation Launchpad Pro emulation for Dirtywave M8",
     "author": "bobbydigitales",
+    "license": "MIT",
     "ui": "ui.js",
     "api_version": 1,
     "capabilities": {
