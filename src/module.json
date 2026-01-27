@@ -1,7 +1,7 @@
 {
     "id": "m8",
     "name": "M8 LPP Emulator",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Novation Launchpad Pro emulation for Dirtywave M8",
     "author": "bobbydigitales",
     "license": "MIT",
@@ -9,6 +9,7 @@
     "api_version": 1,
     "capabilities": {
         "raw_midi": true,
+        "raw_ui": true,
         "component_type": "utility"
     }
 }

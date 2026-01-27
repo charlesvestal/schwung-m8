@@ -108,6 +108,11 @@ const lppColorToMoveMonoMap = new Map([
     [0x05, 0x7f], [0x78, 0x7f], [0x01, 0x10], [0x07, 0x0f]
 ]);
 
+/* Knob state for relative-to-absolute conversion */
+const knobState = [64, 64, 64, 64, 64, 64, 64, 64, 64, 64];
+const KNOB_CC_START = 71;
+const KNOB_CC_END = 80;
+
 /* State */
 let showingTop = true;
 let shiftHeld = false;
@@ -144,6 +149,29 @@ function arraysAreEqual(array1, array2) {
     for (let i = 0; i < array1.length; i++) {
         if (array1[i] !== array2[i]) return false;
     }
+    return true;
+}
+
+/* Handle Move knobs - convert relative encoder to absolute and forward to M8 */
+function handleMoveKnobs(data) {
+    let cc = data[1];
+    let value = data[2];
+
+    if (cc < KNOB_CC_START || cc > KNOB_CC_END) {
+        return false;
+    }
+
+    let knobIndex = cc - KNOB_CC_START;
+
+    /* Relative encoder: 1 = increment, 127 = decrement */
+    if (value === 1) {
+        knobState[knobIndex] = Math.min(127, knobState[knobIndex] + 1);
+    } else if (value === 127) {
+        knobState[knobIndex] = Math.max(0, knobState[knobIndex] - 1);
+    }
+
+    /* Send absolute CC value to M8 on channel 4 (like original) */
+    move_midi_external_send([2 << 4 | 0xB, 0xB3, cc, knobState[knobIndex]]);
     return true;
 }
 
@@ -334,7 +362,11 @@ globalThis.onMidiMessageInternal = function (data) {
             return;
         }
 
-        if (!lppNote) return;
+        if (!lppNote) {
+            /* Forward unmapped CCs (including knobs) to M8 */
+            handleMoveKnobs(data);
+            return;
+        }
 
         let pressed = data[2] === 127;
 
