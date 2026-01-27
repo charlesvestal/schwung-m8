@@ -196,9 +196,10 @@ globalThis.onMidiMessageExternal = function (data) {
     let noteOn = maskedValue === 0x90;
     let noteOff = maskedValue === 0x80;
 
-    /* Handle sysex */
+    /* Handle sysex - 0xF7 can appear at different positions based on packet type:
+     * CIN 0x05 (1-byte end): data[0], CIN 0x06 (2-byte end): data[1], CIN 0x07 (3-byte end): data[2] */
     let sysexStart = value === 0xF0;
-    let sysexEnd = data[2] === 0xF7;
+    let sysexEnd = data[0] === 0xF7 || data[1] === 0xF7 || data[2] === 0xF7;
 
     if (sysexStart) {
         sysexBuffer = [];
