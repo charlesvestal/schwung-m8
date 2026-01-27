@@ -12,8 +12,7 @@ import {
     MovePlay, MoveRec, MoveLoop, MoveMute, MoveUndo,
     MovePad32, MidiClock
 } from '/data/UserData/move-anything/shared/constants.mjs';
-
-import { isCapacitiveTouch } from '/data/UserData/move-anything/shared/input_filter.mjs';
+import { loadConfig, updateConfig, handleMoveKnobs, changeBank, changeSave } from "./virtual_knobs.mjs";
 
 /* LPP note layout (10x10 grid) */
 const lppNotes = [
@@ -76,13 +75,26 @@ const lppPadToMovePadMapBottom = new Map([
 
 const moveToLppPadMapBottom = new Map([...lppPadToMovePadMapBottom.entries()].map((a) => [a[1], a[0]]));
 
+const movePadToKnobBankMap = new Map([
+    [17, 0], [19, 1], [21, 2], [23, 3], [25, 4], [27, 5], [29, 6], [31, 7]
+]);
+
 /* M8-specific colors for LPP color translation */
 const light_grey = 0x7c;
 const dim_grey = 0x10;
 const green = 0x7e;
 const navy = 0x7d;
 const sky = 0x5f;
+const red = 0x7f;
+const blue = 0x5f;
+const azure = 0x63;
+const white = 0x7a;
+const pink = 0x6d;
+const aqua = 0x5a;
 const black = 0x00;
+const lemonade = 0x6b;
+const lime = 0x20;
+const fern = 0x55;
 
 /* Alias imported constants for local usage */
 const moveLOGO = MovePad32;
@@ -100,18 +112,13 @@ const moveWHEELTouch = MoveMainTouch;
 
 /* Color mapping */
 const lppColorToMoveColorMap = new Map([
-    [0x15, green], [0x17, 0x20], [0x1, light_grey], [0x05, 0x7f], [0x03, 0x7a], [0x4e, 0x5f],
-    [0x47, 0x6d], [0x13, 0x5a], [0x27, 0x5f], [0x2b, 0x63], [0x16, 0x55]
+    [0x15, green], [0x17, lime], [0x1, light_grey], [0x05, red], [0x39, red], [0x03, white], [0x4e, blue],
+    [0x47, pink], [0x13, aqua], [0x47, lemonade], [0x27, blue], [0x2b, azure], [0x16, fern]
 ]);
 
 const lppColorToMoveMonoMap = new Map([
     [0x05, 0x7f], [0x78, 0x7f], [0x01, 0x10], [0x07, 0x0f]
 ]);
-
-/* Knob state for relative-to-absolute conversion */
-const knobState = [64, 64, 64, 64, 64, 64, 64, 64, 64, 64];
-const KNOB_CC_START = 71;
-const KNOB_CC_END = 80;
 
 /* State */
 let showingTop = true;
@@ -137,7 +144,7 @@ function drawUI() {
     print(2, 50, line4, 1);
 }
 
-function displayMessage(l1, l2, l3, l4) {
+export function displayMessage(l1, l2, l3, l4) {
     if (l1) line1 = l1;
     if (l2) line2 = l2;
     if (l3 !== undefined) line3 = l3;
@@ -149,29 +156,6 @@ function arraysAreEqual(array1, array2) {
     for (let i = 0; i < array1.length; i++) {
         if (array1[i] !== array2[i]) return false;
     }
-    return true;
-}
-
-/* Handle Move knobs - convert relative encoder to absolute and forward to M8 */
-function handleMoveKnobs(data) {
-    let cc = data[1];
-    let value = data[2];
-
-    if (cc < KNOB_CC_START || cc > KNOB_CC_END) {
-        return false;
-    }
-
-    let knobIndex = cc - KNOB_CC_START;
-
-    /* Relative encoder: 1 = increment, 127 = decrement */
-    if (value === 1) {
-        knobState[knobIndex] = Math.min(127, knobState[knobIndex] + 1);
-    } else if (value === 127) {
-        knobState[knobIndex] = Math.max(0, knobState[knobIndex] - 1);
-    }
-
-    /* Send absolute CC value to M8 on channel 4 (like original) */
-    move_midi_external_send([2 << 4 | 0xB, 0xB3, cc, knobState[knobIndex]]);
     return true;
 }
 
@@ -212,6 +196,11 @@ function initLPP() {
     ];
     move_midi_external_send(LPPInitSysex);
     showingTop = true;
+
+    // enable knobs (primary bank)
+    loadConfig();
+    updateConfig();
+
     displayMessage("M8 LPP Emulator", "M8 connected", "", "");
 }
 
@@ -302,11 +291,6 @@ globalThis.onMidiMessageInternal = function (data) {
     const isCC = data[0] === 0xb0;
     const isAt = data[0] === 0xa0;
 
-    /* Filter capacitive touch (notes < 10, except wheel touch for navigation) */
-    if (isNote && isCapacitiveTouch(data[1]) && data[1] !== moveWHEELTouch) {
-        return;
-    }
-
     if (isAt) return; /* Ignore aftertouch */
 
     let activeMoveToLppPadMap = showingTop ? moveToLppPadMapTop : moveToLppPadMapBottom;
@@ -334,7 +318,22 @@ globalThis.onMidiMessageInternal = function (data) {
 
         let lppNote = activeMoveToLppPadMap.get(moveNoteNumber);
 
-        if (!lppNote) return;
+        if (!lppNote && !shiftHeld && data[2] == 127) {
+            // check if you're switching knob banks
+            if (movePadToKnobBankMap.has(moveNoteNumber)) {
+                changeBank(movePadToKnobBankMap.get(moveNoteNumber));
+                return;
+            }
+
+            handleMoveKnobs(data);
+            return;
+        } else if (!lppNote && shiftHeld && data[2] == 127) {
+            // check if you're switching saved banks
+            if (movePadToKnobBankMap.has(moveNoteNumber)) {
+                changeSave(movePadToKnobBankMap.get(moveNoteNumber));
+                return;
+            }
+        }
 
         let moveVelocity = data[2] * 4;
         if (moveVelocity > 127) moveVelocity = 127;
@@ -364,7 +363,7 @@ globalThis.onMidiMessageInternal = function (data) {
 
         if (!lppNote) {
             /* Forward unmapped CCs (including knobs) to M8 */
-            handleMoveKnobs(data);
+            handleMoveKnobs(data, shiftHeld);
             return;
         }
 
@@ -389,6 +388,7 @@ globalThis.onMidiMessageInternal = function (data) {
 globalThis.init = function () {
     console.log("M8 LPP Emulator module starting...");
     displayMessage("M8 LPP Emulator", "Waiting for M8", "to connect", "");
+    loadConfig();
 };
 
 globalThis.tick = function () {
