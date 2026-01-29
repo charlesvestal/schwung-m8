@@ -217,7 +217,7 @@ class VirtualM8:
 
 def create_led_sysex(updates):
     """
-    Create LPP sysex message for LED updates.
+    Create LPP sysex message for LED updates (RGB mode).
 
     Args:
         updates: list of (note, (r, g, b)) tuples
@@ -235,6 +235,48 @@ def create_led_sysex(updates):
         data.extend([note, r, g, b])
 
     return mido.Message('sysex', data=data)
+
+
+def create_led_notes(updates):
+    """
+    Create note messages for LED updates (velocity = color index).
+    This is what the real M8 sends - note on messages with color as velocity.
+
+    Args:
+        updates: list of (note, (r, g, b)) tuples
+
+    Returns:
+        list of mido.Message note_on messages
+    """
+    if not updates:
+        return []
+
+    messages = []
+    for note, (r, g, b) in updates:
+        # Convert RGB to a simple velocity/color value
+        # M8 uses specific color indices - approximate with brightness
+        velocity = max(r, g, b)
+        if velocity == 0:
+            velocity = 0
+        else:
+            # Use color palette indices that the M8 emulator recognizes
+            if r > g and r > b:
+                velocity = 0x05  # red
+            elif g > r and g > b:
+                velocity = 0x15  # green
+            elif b > r and b > g:
+                velocity = 0x27  # blue
+            elif r > 0 and g > 0 and b == 0:
+                velocity = 0x17  # yellow/lime
+            elif r == 0 and g > 0 and b > 0:
+                velocity = 0x13  # cyan/aqua
+            else:
+                velocity = 0x01  # dim white
+
+        # Send on channel 1 (0x90) or channel 2 (0x91) based on M8 protocol
+        messages.append(mido.Message('note_on', note=note, velocity=velocity, channel=1))
+
+    return messages
 
 
 def log(msg, category='info'):
@@ -283,6 +325,7 @@ def run_virtual_m8(input_port, output_port, verbose=False):
     """Main loop - receive MIDI, simulate M8, send responses"""
 
     m8 = VirtualM8(verbose=verbose)
+    connected = False  # Track if we've connected to LPP
 
     log(f"Opening input:  {input_port}")
     log(f"Opening output: {output_port}")
@@ -295,14 +338,7 @@ def run_virtual_m8(input_port, output_port, verbose=False):
         return
 
     log("Virtual M8 running! Press Ctrl+C to exit.")
-    log("Sending initial LED state...")
-
-    # Send initial LED state
-    initial_leds = m8.get_all_leds()
-    sysex = create_led_sysex(initial_leds)
-    if sysex:
-        outport.send(sysex)
-        log(f"Sent {len(initial_leds)} LED updates", 'tx')
+    log("Waiting for LPP identity response...")
 
     try:
         while True:
@@ -321,12 +357,26 @@ def run_virtual_m8(input_port, output_port, verbose=False):
                     if verbose:
                         log(f"  Data: {' '.join(f'{b:02X}' for b in msg.data[:20])}...", 'rx')
 
-                # Send LED updates
+                    # Check for LPP identity response: 7E 00 06 02 00 20 29 (Novation)
+                    # This is what the M8 emulator sends to announce itself
+                    if len(msg.data) >= 7 and msg.data[0:4] == (0x7E, 0x00, 0x06, 0x02):
+                        log("LPP identity response detected! Sending initial LED state...", 'info')
+                        if not connected:
+                            connected = True
+                            # Send initial LED state as note messages (like real M8)
+                            initial_leds = m8.get_all_leds()
+                            notes = create_led_notes(initial_leds)
+                            for note_msg in notes:
+                                outport.send(note_msg)
+                            log(f"Sent {len(notes)} LED note messages", 'tx')
+
+                # Send LED updates as note messages
                 if updates:
-                    sysex = create_led_sysex(updates)
-                    if sysex:
-                        outport.send(sysex)
-                        log(f"LED update: {len(updates)} LEDs", 'tx')
+                    notes = create_led_notes(updates)
+                    for note_msg in notes:
+                        outport.send(note_msg)
+                    if notes:
+                        log(f"LED update: {len(notes)} notes", 'tx')
 
             time.sleep(0.001)  # Small sleep to prevent CPU spin
 

@@ -257,6 +257,17 @@ globalThis.onMidiMessageExternal = function (data) {
 
     if (!(noteOn || noteOff)) return;
 
+    /* If we receive LED data (note messages), M8 is connected.
+     * This handles the case where M8 skips the identity request
+     * because it already received our proactive identity response. */
+    if (!m8Connected) {
+        m8Connected = true;
+        showingTop = true;
+        loadConfig();
+        updateConfig();
+        displayMessage("M8 LPP Emulator", "M8 connected", "", "");
+    }
+
     let lppNoteNumber = data[1];
     let lppVelocity = data[2];
 
