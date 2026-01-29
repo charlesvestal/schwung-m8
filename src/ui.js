@@ -214,9 +214,11 @@ globalThis.onMidiMessageExternal = function (data) {
     let noteOff = maskedValue === 0x80;
 
     /* Handle sysex - 0xF7 can appear at different positions based on packet type:
-     * CIN 0x05 (1-byte end): data[0], CIN 0x06 (2-byte end): data[1], CIN 0x07 (3-byte end): data[2] */
+     * CIN 0x05 (1-byte end): data[0], CIN 0x06 (2-byte end): data[1], CIN 0x07 (3-byte end): data[2]
+     * Only push bytes up to and including F7 to avoid padding zeros */
     let sysexStart = value === 0xF0;
-    let sysexEnd = data[0] === 0xF7 || data[1] === 0xF7 || data[2] === 0xF7;
+    let sysexEndPos = data[0] === 0xF7 ? 0 : data[1] === 0xF7 ? 1 : data[2] === 0xF7 ? 2 : -1;
+    let sysexEnd = sysexEndPos >= 0;
 
     if (sysexStart) {
         sysexBuffer = [];
@@ -228,7 +230,10 @@ globalThis.onMidiMessageExternal = function (data) {
         return;
     }
     if (sysexEnd) {
-        sysexBuffer.push(...data);
+        /* Only push bytes up to and including F7, skip padding zeros */
+        for (let i = 0; i <= sysexEndPos; i++) {
+            sysexBuffer.push(data[i]);
+        }
         if (arraysAreEqual(sysexBuffer, m8InitSysex)) {
             initLPP();
         }
