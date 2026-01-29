@@ -226,6 +226,11 @@ globalThis.onMidiMessageExternal = function (data) {
         return;
     }
     if (sysexBuffer.length && !sysexEnd) {
+        /* Safety: limit sysex buffer size to prevent unbounded growth from malformed sysex */
+        if (sysexBuffer.length > 4096) {
+            sysexBuffer = [];
+            return;
+        }
         sysexBuffer.push(...data);
         return;
     }
