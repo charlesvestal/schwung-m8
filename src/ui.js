@@ -129,6 +129,9 @@ let currentView = moveBACK;
 let wheelClicked = false;
 let sysexBuffer = [];
 const m8InitSysex = [0xf0, 0x7e, 0x7f, 0x06, 0x01, 0xf7];
+let m8Connected = false;  /* Track if M8 has connected */
+let initRetryTicks = 0;   /* Ticks since startup for retry logic */
+const INIT_RETRY_INTERVAL = 60;  /* Send init every ~1 second if not connected */
 
 /* Display state */
 let line1 = "M8 LPP Emulator";
@@ -184,7 +187,8 @@ function updatePLAYLed() {
     if (liveMode && isPlaying) move_midi_internal_send([0x0b, 0xB0, movePLAY, navy]);
 }
 
-function initLPP() {
+function sendLPPIdentity() {
+    /* Send LPP identity response to M8 - this tells M8 "I'm a Launchpad Pro" */
     let out_cable = 2;
     let LPPInitSysex = [
         out_cable << 4 | 0x4, 0xF0, 126, 0,
@@ -195,7 +199,12 @@ function initLPP() {
         out_cable << 4 | 0x6, 0x00, 0xF7, 0x0
     ];
     move_midi_external_send(LPPInitSysex);
+}
+
+function initLPP() {
+    sendLPPIdentity();
     showingTop = true;
+    m8Connected = true;
 
     // enable knobs (primary bank)
     loadConfig();
@@ -399,8 +408,24 @@ globalThis.init = function () {
     console.log("M8 LPP Emulator module starting...");
     displayMessage("M8 LPP Emulator", "Waiting for M8", "to connect", "");
     loadConfig();
+
+    /* Proactively send LPP identity on startup - this handles the case where
+     * M8 sent its identity request before the module loaded. The M8 will
+     * recognize the LPP identity response and start communicating. */
+    sendLPPIdentity();
 };
 
 globalThis.tick = function () {
+    /* Proactively send LPP identity until M8 connects.
+     * This handles the case where M8 sent its identity request before
+     * the module loaded (e.g., when entering overtake mode after M8 is
+     * already connected). */
+    if (!m8Connected) {
+        initRetryTicks++;
+        if (initRetryTicks >= INIT_RETRY_INTERVAL) {
+            initRetryTicks = 0;
+            sendLPPIdentity();
+        }
+    }
     drawUI();
 };
