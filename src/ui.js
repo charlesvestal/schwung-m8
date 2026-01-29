@@ -188,15 +188,20 @@ function updatePLAYLed() {
 }
 
 function sendLPPIdentity() {
-    /* Send LPP identity response to M8 - this tells M8 "I'm a Launchpad Pro" */
+    /* Send LPP identity response to M8 - this tells M8 "I'm a Launchpad Pro"
+     * Format: F0 7E <dev_id> 06 02 00 20 29 51 00 00 00 <fw_4_bytes> F7
+     * - 00 20 29 = Novation manufacturer ID
+     * - 51 = Launchpad Pro family code (critical for M8 recognition)
+     * - 00 00 00 = family member
+     * - 00 01 00 00 = firmware version placeholder */
     let out_cable = 2;
     let LPPInitSysex = [
-        out_cable << 4 | 0x4, 0xF0, 126, 0,
-        out_cable << 4 | 0x4, 6, 2, 0,
-        out_cable << 4 | 0x4, 32, 41, 0x00,
-        out_cable << 4 | 0x4, 0x00, 0x00, 0x00,
-        out_cable << 4 | 0x4, 0x00, 0x00, 0x00,
-        out_cable << 4 | 0x6, 0x00, 0xF7, 0x0
+        out_cable << 4 | 0x4, 0xF0, 0x7E, 0x00,   /* F0 7E 00 - sysex start, universal non-realtime, dev id */
+        out_cable << 4 | 0x4, 0x06, 0x02, 0x00,   /* 06 02 00 - identity reply, manufacturer ID byte 1 */
+        out_cable << 4 | 0x4, 0x20, 0x29, 0x51,   /* 20 29 51 - manufacturer ID bytes 2-3, LPP family code */
+        out_cable << 4 | 0x4, 0x00, 0x00, 0x00,   /* 00 00 00 - family member */
+        out_cable << 4 | 0x4, 0x00, 0x01, 0x00,   /* 00 01 00 - firmware version */
+        out_cable << 4 | 0x6, 0x00, 0xF7, 0x00    /* 00 F7 - firmware byte 4, sysex end */
     ];
     move_midi_external_send(LPPInitSysex);
 }
