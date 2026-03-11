@@ -2,6 +2,8 @@
 
 Novation Launchpad Pro emulation for Dirtywave M8, allowing you to use Ableton Move as an M8 controller.
 
+A port of the original M8 LPP emulation for [Move Anything](https://github.com/charlesvestal/move-anything) by bobbydigitales.
+
 ## Prerequisites
 
 - [Move Everything](https://github.com/charlesvestal/move-anything) installed on your Ableton Move
