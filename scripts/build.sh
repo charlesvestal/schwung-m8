@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build M8 module for Move Anything
+# Build M8 module for Schwung
 # This is a JS-only module, so just package the files.
 set -e
 

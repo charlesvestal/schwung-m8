@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-M8 LPP Emulator module for Move Anything. Emulates a Novation Launchpad Pro for use with Dirtywave M8.
+M8 LPP Emulator module for Schwung. Emulates a Novation Launchpad Pro for use with Dirtywave M8.
 
 ## Build Commands
 

@@ -1,12 +1,12 @@
-# M8 LPP Emulator for Move Everything
+# M8 LPP Emulator for Schwung
 
 Novation Launchpad Pro emulation for Dirtywave M8, allowing you to use Ableton Move as an M8 controller.
 
-A port of the original M8 LPP emulation for [Move Everything](https://github.com/charlesvestal/move-everything) by bobbydigitales.
+A port of the original M8 LPP emulation for [Schwung](https://github.com/charlesvestal/schwung) by bobbydigitales.
 
 ## Prerequisites
 
-- [Move Everything](https://github.com/charlesvestal/move-everything) installed on your Ableton Move
+- [Schwung](https://github.com/charlesvestal/schwung) installed on your Ableton Move
 - Dirtywave M8 hardware
 
 ## Features
@@ -24,7 +24,7 @@ A port of the original M8 LPP emulation for [Move Everything](https://github.com
 ## Installation
 
 Via Module Store (recommended):
-- Launch Move Everything → Module Store → Utilities → M8 LPP Emulator
+- Launch Schwung → Module Store → Utilities → M8 LPP Emulator
 
 Manual installation:
 ```bash
@@ -49,7 +49,7 @@ This ensures M8's Launchpad Pro protocol doesn't trigger Move's synths or get ec
 
 ## AI Assistance Disclaimer
 
-This module is part of Move Everything and was developed with AI assistance, including Claude, Codex, and other AI assistants.
+This module is part of Schwung and was developed with AI assistance, including Claude, Codex, and other AI assistants.
 
 All architecture, implementation, and release decisions are reviewed by human maintainers.  
 AI-assisted content may still contain errors, so please validate functionality, security, and license compatibility before production use.

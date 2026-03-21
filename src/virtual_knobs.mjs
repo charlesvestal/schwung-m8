@@ -223,7 +223,7 @@ function clamp(value, min, max) {
 }
 
 export function loadConfig() {
-    var f, fname = "/data/UserData/move-anything-data/m8knobconfig.json";
+    var f, fname = "/data/UserData/schwung-data/m8knobconfig.json";
     let config = std.loadFile(fname);
 
     if (config) {
@@ -234,7 +234,7 @@ export function loadConfig() {
 }
 
 export function saveConfig() {
-    var f, fname = "/data/UserData/move-anything-data/m8knobconfig.json";
+    var f, fname = "/data/UserData/schwung-data/m8knobconfig.json";
 
     f = std.open(fname, "w");
     f.puts(JSON.stringify(saveBanks));

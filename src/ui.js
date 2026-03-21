@@ -11,7 +11,7 @@ import {
     MoveMainButton, MoveMainTouch,
     MovePlay, MoveRec, MoveLoop, MoveMute, MoveUndo,
     MovePad32, MidiClock
-} from '/data/UserData/move-anything/shared/constants.mjs';
+} from '/data/UserData/schwung/shared/constants.mjs';
 import { loadConfig, updateConfig, handleMoveKnobs, changeBank, changeSave, setDisplayMessage } from "./virtual_knobs.mjs";
 
 /* LPP note layout (10x10 grid) */
