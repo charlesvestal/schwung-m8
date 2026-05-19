@@ -4,7 +4,7 @@
     "version": "1.1.9",
     "description": "Novation Launchpad Pro emulation for Dirtywave M8 with knob banks",
     "author": "bobbydigitales, chaolue, damian- (port: charlesvestal)",
-    "license": "MIT",
+    "license": "CC-BY-NC-SA-4.0",
     "ui": "ui.js",
     "api_version": 1,
     "component_type": "overtake",
